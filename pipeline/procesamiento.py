@@ -27,6 +27,22 @@ with procesados_path.open('w') as procesados_file:
             for row in reader:
                 writer.writerow(row)
 
+
+def nivel_ED(row):
+    if row['NIVEL_ED'] == '1':
+        row['NIVEL_ED_str'] = 'Primario incompleto'
+    elif row['NIVEL_ED'] == '2':
+        row['NIVEL_ED_str'] = 'Primario completo'
+    elif row['NIVEL_ED'] == '3':
+        row['NIVEL_ED_str'] = 'Secundario incompleto'    
+    elif row['NIVEL_ED'] == '4':
+        row['NIVEL_ED_str'] = 'Secundario completo'    
+    elif row['NIVEL_ED'] == '5' or row['NIVEL_ED'] == '6' :
+        row['NIVEL_ED_str'] = 'Primario incompleto'
+    elif row['NIVEL_ED'] == '7' or row['NIVEL_ED'] == '9' :
+        row['NIVEL_ED_str'] = 'Sin informacion'
+    return row
+
 def agregar_fila_CH04 (row):
     if row['CH04'] == '1':
         row['CH04_str'] = 'Varon'
@@ -34,20 +50,27 @@ def agregar_fila_CH04 (row):
         row['CH04_str'] = 'Mujer'
     return row
 
-with procesados_path.open('r') as procesados_file:
-    reader = csv.DictReader(procesados_file, delimiter=";")
-    # AGREGO NUEVO CAMPO EN COLUMNA
-    fieldnames = reader.fieldnames + ['CH04_str']
+def leerYmodificar(file_path, funcion, string):
+    with file_path.open('r') as file:
+        reader = csv.DictReader(file, delimiter=";")
+        # AGREGO NUEVO CAMPO EN COLUMNA
+        fieldnames = reader.fieldnames + [string]
 
-    # CREO UNA LISTA VACIA CON TODAS LAS ROWS MODIFICADAS
-    filas_nuevas = []
-    for row in reader:
-        fila = agregar_fila_CH04(row)
-        filas_nuevas.append(fila)
+        # CREO UNA LISTA VACIA CON TODAS LAS ROWS MODIFICADAS
+        filas_nuevas = []
+        for row in reader:
+            fila = funcion(row)
+            filas_nuevas.append(fila)
+        
+    return filas_nuevas, fieldnames
 
+def reemplazar(file_path,funcion,string):
+    filas_modificadas, fieldnames = leerYmodificar(file_path, funcion, string)
+    with file_path.open('w') as procesados_file:
+        writer = csv.DictWriter(procesados_file, fieldnames= fieldnames, delimiter=';')
+        writer.writeheader()
+        # ESCRIBO EN EL ARCHIVO LA NUEVA COLUMNA CON LOS DATOS QUE AGREGUE
+        writer.writerows(filas_modificadas)
 
-with procesados_path.open('w') as procesados_file:
-    writer = csv.DictWriter(procesados_file, fieldnames= fieldnames, delimiter=';')
-    writer.writeheader()
-    # ESCRIBO EN EL ARCHIVO LA NUEVA COLUMNA CON LOS DATOS QUE AGREGUE
-    writer.writerows(filas_nuevas)
+reemplazar(procesados_path,agregar_fila_CH04,"CH04_str")
+reemplazar(procesados_path,nivel_ED,"NIVEL_ED_str")
