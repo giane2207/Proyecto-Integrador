@@ -151,6 +151,30 @@ def agregar_densidad_hogar(row):
          
     return row
 
+def agregar_condicion_habitabilidad(row):
+    """ Asigna una categoria de habitabilidad (Buena, Saludable, Regular o Insuficiente)
+        a una vivienda en funcion de sus condiciones basicas."""
+    
+    tieneAgua = row['IV6']
+    origenAgua = row['IV7']
+    poseeBanio = row['IV8']
+    techo = row['MATERIAL_TECHUMBRE']
+    piso = row['IV3']
+
+    if all(x == '1' for x in [tieneAgua, origenAgua, poseeBanio, piso]) and techo == 'Material durable':
+        row['CONDICION_DE_HABITABILIDAD'] = 'Buena'
+    
+    elif poseeBanio == '1' and tieneAgua in ['1', '2'] and origenAgua in ['1', '2'] and piso in ['1', '2'] and techo == 'Material durable':
+         row['CONDICION_DE_HABITABILIDAD'] = 'Saludable'
+
+    elif poseeBanio == '1' and (tieneAgua == '3' or origenAgua == '3') and piso in ['1', '2'] and techo != 'Material durable':
+         row['CONDICION_DE_HABITABILIDAD'] ='Regular'
+
+    else:
+         row['CONDICION_DE_HABITABILIDAD'] ='Insuficiente'
+
+    return row
+
 # ------ LECTURA DEL ARCHIVO ORIGINAL, APLICACION DE FUNCIONES PARA GENERAR LISTA DE HILERAS CON INFORMACION MODIFICADA, REESCRITURA EN ARCHIVO .CSV ------
 
 def reemplazar(file_path,funciones,cadenas):
@@ -184,8 +208,8 @@ unir_archivos(hogares_path, procesados_path / "hogares.csv")
 funciones_individuos = [agregar_CH04,agregar_nivel_ED,agregar_condicion_laboral,agregar_universitario]
 nombres_individuos =["CH04_str","NIVEL_ED_str", "CONDICION_LABORAL","UNIVERSITARIO"]
 
-funciones_hogares = [agregar_tipo_hogar,agregar_material_techumbre,agregar_densidad_hogar]
-nombres_hogares =["TIPO_HOGAR","MATERIAL_TECHUMBRE", "DENSIDAD_HOGAR"]
+funciones_hogares = [agregar_tipo_hogar,agregar_material_techumbre,agregar_densidad_hogar, agregar_condicion_habitabilidad]
+nombres_hogares =["TIPO_HOGAR","MATERIAL_TECHUMBRE", "DENSIDAD_HOGAR", "CONDICION_DE_HABITABILIDAD"]
 
 reemplazar(procesados_path / "individuos.csv", funciones_individuos, nombres_individuos)
 reemplazar(procesados_path / "hogares.csv", funciones_hogares, nombres_hogares)
