@@ -38,32 +38,37 @@ def unir_archivos(origen_path, salida_path):
                 for fila in reader:
                     writer.writerow(fila)
 
-# unir los archivos de individuos y hogares en archivos csv unificados
-unir_archivos(individuos_path, procesados_path / "individuos.csv")
-unir_archivos(hogares_path, procesados_path / "hogares.csv")
 
-
-def nivel_ED(row):
-    if row['NIVEL_ED'] == '1':
-        row['NIVEL_ED_str'] = 'Primario incompleto'
-    elif row['NIVEL_ED'] == '2':
-        row['NIVEL_ED_str'] = 'Primario completo'
-    elif row['NIVEL_ED'] == '3':
-        row['NIVEL_ED_str'] = 'Secundario incompleto'    
-    elif row['NIVEL_ED'] == '4':
-        row['NIVEL_ED_str'] = 'Secundario completo'    
-    elif row['NIVEL_ED'] == '5' or row['NIVEL_ED'] == '6' :
-        row['NIVEL_ED_str'] = 'Primario incompleto'
-    elif row['NIVEL_ED'] == '7' or row['NIVEL_ED'] == '9' :
-        row['NIVEL_ED_str'] = 'Sin informacion'
-    return row
-
-def agregar_fila_CH04 (row):
-    if row['CH04'] == '1':
-        row['CH04_str'] = 'Varon'
+def traducir_nivel_ed(fila):
+    valor = fila['NIVEL_ED']
+    if valor == '1':
+        return "Primario incompleto"
+    elif valor == '2':
+        return "Primario completo"
+    elif valor == '3':
+        return "Secundario incompleto"
+    elif valor == '4':
+        return "Secundario completo"
+    elif valor in ['5', '6']:
+        return "Superior o universitario"
     else:
-        row['CH04_str'] = 'Mujer'
+        return "Sin informacion"
+
+def agregar_universitario(row):
+    if row['CH06'] >= '18':
+        if row['NIVEL_ED'] == '6':
+            row['UNIVERSITARIO'] = '1 '
+        else:
+            row['UNIVERSITARIO'] = '0'
+    else:
+        row['UNIVERSITARIO'] = '2'
     return row
+
+def traducir_ch04 (fila):
+    if fila['CH04'] == '1':
+        return 'Masculino'
+    else:
+        return'Femenino'
 
 def leerYmodificar(file_path, funcion, string):
     with file_path.open('r') as file:
@@ -87,5 +92,5 @@ def reemplazar(file_path,funcion,string):
         # ESCRIBO EN EL ARCHIVO LA NUEVA COLUMNA CON LOS DATOS QUE AGREGUE
         writer.writerows(filas_modificadas)
 
-reemplazar(procesados_path,agregar_fila_CH04,"CH04_str")
-reemplazar(procesados_path,nivel_ED,"NIVEL_ED_str")
+reemplazar(procesados_path,traducir_ch04,"CH04_str")
+reemplazar(procesados_path,traducir_nivel_ed,"NIVEL_ED_str")
