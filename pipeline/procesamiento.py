@@ -151,49 +151,41 @@ def agregar_densidad_hogar(row):
          
     return row
 
+# ------ LECTURA DEL ARCHIVO ORIGINAL, APLICACION DE FUNCIONES PARA GENERAR LISTA DE HILERAS CON INFORMACION MODIFICADA, REESCRITURA EN ARCHIVO .CSV ------
 
-# ------ LECTURA DEL ARCHIVO, GENERACION DE LISTA CON INFORMACION A AGREGAR Y REEMPLAZO EN ARCHIVO CSV ------
-def leerYmodificar(file_path, funcion, string):
-    """ Obtiene el path, tipo de funcion y nombre nuevo a agregar en el encabezado por parametros, agrega el encabezad
-        y, leyendo el archivo y aplicandole la funcion especifica, genera una lista de hileras con informacion modificada. Luego retorna por
-        separado la lista de hileras y el encabezado en dos variables """
+def reemplazar(file_path,funciones,cadenas):
+    """ Obtiene el path del archivo , lista de funciones y lista de encabezados por parametros.
+        Ambas listas deben coincidir en orden ya que son 1-1 
+        Agrega todos los encabezados y aplica cada funcion especifica a las hileras. 
+        Genera una lista de hileras con informacion modificada que luego se escribe en el archivo, modificando el original """
     
     with file_path.open('r') as file:
-        reader = csv.DictReader(file, delimiter=";")
-        # AGREGO NUEVO CAMPO EN COLUMNA
-        fieldnames = reader.fieldnames + [string]
+        reader = csv.DictReader(file, delimiter=';')
+        # AGREGO TODOS LOS NUEVOS ENCABEZADOS
+        fieldnames = reader.fieldnames + cadenas
 
-        # CREO UNA LISTA VACIA CON TODAS LAS ROWS MODIFICADAS
+        # POR CADA FILA, APLICO FUNCION DE LA LISTA DE FUNCIONES Y AGREGO EL NUEVO CONTENIDO EN FILAS_NUEVAS
         filas_nuevas = []
         for row in reader:
-            fila = funcion(row)
-            filas_nuevas.append(fila)
-        
-    return filas_nuevas, fieldnames
+            for funcion in funciones:
+                row = funcion(row)
+            filas_nuevas.append(row)
 
-def reemplazar(file_path,funcion,string):
-    """ Obtiene el path, tipo de funcion y nombre nuevo a agregar en el encabezado por parametros, llama a una funcion y obtiene la informacion
-     de hileras y encabezado modificadas y las escribe en el archivo respectivamente """
-    
-    filas_modificadas, fieldnames = leerYmodificar(file_path, funcion, string)
     with file_path.open('w') as procesados_file:
-        writer = csv.DictWriter(procesados_file, fieldnames= fieldnames, delimiter=';')
+        writer = csv.DictWriter(procesados_file,fieldnames=fieldnames, delimiter=';')
         writer.writeheader()
-        writer.writerows(filas_modificadas)
-
+        writer.writerows(filas_nuevas)
 
 # UNO LOS ARCHIVOS DE INDIVIDUOS Y HOGARES EN .CSV RESPECTIVAMENTE
 unir_archivos(individuos_path, procesados_path / "individuos.csv")
 unir_archivos(hogares_path, procesados_path / "hogares.csv")
 
-# AGREGAR Y REEMPLAZAR COLUMNAS A LOS ARCHIVOS INDIVIDUOS
-reemplazar(procesados_path / "individuos.csv",agregar_CH04,"CH04_str")
-reemplazar(procesados_path / "individuos.csv",agregar_nivel_ED,"NIVEL_ED_str")
-reemplazar(procesados_path / "individuos.csv",agregar_condicion_laboral,"CONDICION_LABORAL")
-reemplazar(procesados_path / "individuos.csv",agregar_universitario,"UNIVERSITARIO")
+# CREO LISTA DE FUNCIONES Y DE ENCABEZADOS PARA MODIFICAR ARCHIVO DE INDIVIDUOS/HOGARES
+funciones_individuos = [agregar_CH04,agregar_nivel_ED,agregar_condicion_laboral,agregar_universitario]
+nombres_individuos =["CH04_str","NIVEL_ED_str", "CONDICION_LABORAL","UNIVERSITARIO"]
 
+funciones_hogares = [agregar_tipo_hogar,agregar_material_techumbre,agregar_densidad_hogar]
+nombres_hogares =["TIPO_HOGAR","MATERIAL_TECHUMBRE", "DENSIDAD_HOGAR"]
 
-# AGREGAR Y REEMPLAZAR COLUMNAS A LOS ARCHIVOS HOGARES
-reemplazar(procesados_path / "hogares.csv",agregar_tipo_hogar,"TIPO_HOGAR")
-reemplazar(procesados_path / "hogares.csv",agregar_material_techumbre,"MATERIAL_TECHUMBRE")
-reemplazar(procesados_path / "hogares.csv",agregar_densidad_hogar,"DENSIDAD_HOGAR")
+reemplazar(procesados_path / "individuos.csv", funciones_individuos, nombres_individuos)
+reemplazar(procesados_path / "hogares.csv", funciones_hogares, nombres_hogares)
