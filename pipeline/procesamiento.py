@@ -7,25 +7,40 @@ hogares_path = Path("data/hogares")
 # PATH A LA CARPETA DE SALIDA
 procesados_path = Path("data/procesados/individuos_procesados.csv")
 
+def unir_archivos(origen_path, salida_path):
+    """crea un archivo unificado con todos los archivos contenidos en la ruta origen
+    y lo guarda en la ruta de salida"""
 
+    # se obtienen todos los nombres de archivos que hay en la carpeta origen
+    archivos = os.listdir(origen_path)
 
-# PROCESADOS_FILE = NOMBRE DEL ARCHIVO FINAL
-# ARCHIVO = ITERADOR SOBRE LOS TRIMESTRES DENTRO DE INDIVIDUAL_PATH
-# FILE = NOMBRE DEL ARCHIVO QUE ABRIS
-writer = None
-with procesados_path.open('w') as procesados_file:
-    for archivo in individuos_path.glob("*.txt"):
-        with archivo.open('r') as file:
-            reader = csv.DictReader(file, delimiter = ";")
+    # se utiliza para asegurarse de escribir los encabezados una sola vez
+    encabezado_escrito = False  
+    
+    with open(salida_path, 'w', encoding='utf-8') as salida:
+        writer = None
 
-            # SI WRITER NO TIENE NADA, ESCRIBE EL HEADER
-            if writer is None:
-                writer = csv.DictWriter(procesados_file, fieldnames= reader.fieldnames, delimiter= ';')
-                writer.writeheader()
-            
-            # ESCRIBE TODAS LAS ROWS
-            for row in reader:
-                writer.writerow(row)
+        # se recorren todos los archivos de la carpeta origen
+        for archivo in archivos:
+
+            with open(origen_path / archivo, 'r', encoding='utf-8') as entrada:
+                reader = csv.reader(entrada, delimiter=';')
+
+                # se obtiene la primera fila (encabezado) del archivo
+                encabezado = next(reader)
+
+                # se escribe el encabezado una sola vez en el archivo final
+                if not encabezado_escrito:
+                    writer = csv.writer(salida, delimiter=';')
+                    writer.writerow(encabezado)
+                    encabezado_escrito = True
+
+                for fila in reader:
+                    writer.writerow(fila)
+
+# unir los archivos de individuos y hogares en archivos csv unificados
+unir_archivos(individuos_path, procesados_path / "individuos.csv")
+unir_archivos(hogares_path, procesados_path / "hogares.csv")
 
 
 def nivel_ED(row):
